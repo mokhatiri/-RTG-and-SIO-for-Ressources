@@ -1,52 +1,48 @@
 package terrain;
-
-/**
- * Generates 2D noise maps using OpenSimplexNoise with support for octaves.
- */
 public class NoiseMapGenerator {
-
     private final Noise noise;
 
     public NoiseMapGenerator(long seed) {
         this.noise = new Noise(seed);
     }
 
-    public double[][] generate(
-            int width,
-            int height,
-            double scale,
-            int octaves,
-            double persistence,
-            double lacunarity
-    ) {
-        double[][] map = new double[width][height];
+    private double layeredNoise(double x, double y, int width, int height, double scale, int octaves, double persistence, double lacunarity, double flattenPower) {
+        if (scale <= 0) scale = 0.0001;
 
-        if (scale <= 0) scale = 0.0001; // prevent division by zero
+        double nx = x / (double) width * scale;
+        double ny = y / (double) height * scale;
 
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-
-                double amplitude = 1;
-                double frequency = 1;
-                double noiseHeight = 0;
-
-                // Apply multiple octaves
-                for (int o = 0; o < octaves; o++) {
-                    double sampleX = x / scale * frequency;
-                    double sampleY = y / scale * frequency;
-
-                    double value = noise.eval(sampleX, sampleY);
-                    noiseHeight += value * amplitude;
-
-                    amplitude *= persistence;
-                    frequency *= lacunarity;
-                }
-
-                // Normalize to 0..1
-                map[x][y] = (noiseHeight + 1) / 2.0;
-            }
+        double val = 0, freq = 1, amp = 1, max = 0;
+        for (int o = 0; o < octaves; o++) {
+            
+            val += noise.eval(nx * freq, ny * freq) * amp;
+            max += amp;
+            amp *= persistence;
+            freq *= lacunarity;
         }
 
+        double normalized = (val / max + 1) / 2.0;
+        double t = (normalized - 0.5) * 2.0;  // shift to [-1, 1]
+        t = t / (1.0 + flattenPower * (t * t)); // smoothly compress
+        normalized = t * 0.5 + 0.5;
+
+
+        return Math.min(1.0, Math.max(0.0, normalized));
+    }
+
+    public double[][] generate(int width, int height, double scale, int octaves, double persistence, double lacunarity, double flattenPower) {
+        double[][] map = new double[width][height];
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                map[x][y] = layeredNoise(x, y, width, height, scale, octaves, persistence, lacunarity, flattenPower);
+        return map;
+    }
+
+    public double[][] generateWithOffset(int width, int height, double scale, int octaves, double persistence, double lacunarity, double flattenPower, double offsetX, double offsetY) {
+        double[][] map = new double[width][height];
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                map[x][y] = layeredNoise(x + offsetX, y + offsetY, width, height, scale, octaves, persistence, lacunarity, flattenPower);
         return map;
     }
 }

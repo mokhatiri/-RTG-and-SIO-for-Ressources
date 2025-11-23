@@ -1,4 +1,5 @@
 package swarm;
 
-public class FitnessFunction {
+public interface FitnessFunction {
+    double evaluate(int x, int y);
 }

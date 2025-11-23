@@ -188,28 +188,61 @@ but later versions exist:
 
 let me introduce OpenSimplex2:
 
-## OpenSimplex2:
+## OpenSimplex2s:
 
 the main difference between this and what we already mentioned is that:
 
 ### 1. different skew/unskew constants:
 
 ```
-private static final double STRETCH_CONSTANT = -0.211324865405187; // (1/√2 - 1)/2
-private static final double SQUISH_CONSTANT = 0.366025403784439;  // (√2 - 1)/2
+    private static final double ROOT2OVER2 = 0.7071067811865476;
+
+    // Rotation constants for OpenSimplex2S
+    private static final double R2 = 0.5 * (Math.sqrt(3.0) - 1.0);
+    private static final double R2_INV = (3.0 - Math.sqrt(3.0)) / 6.0;
 ```
 
-### 2. OpenSimplex2 uses a carefully chosen set of 12 gradients in 2D for better isotropy.
-
+### 2. OpenSimplex2 uses a larger, more angle-uniform gradient table (taken from the 3D/4D improvements).
 
 we are using:
 ```
-private static final double[] gradients2D = new double[] {
-    5,  2,  2,  5,
-    -5,  2, -2,  5,
-    5, -2,  2, -5,
-    -5, -2, -2, -5,
-};
+    private static final double[] grad2 = new double[] {
+            0.130526192220052,  0.99144486137381,
+            0.382683432365090,  0.923879532511287,
+            0.608761429008721,  0.793353340291235,
+            0.793353340291235,  0.608761429008721,
+            0.923879532511287,  0.382683432365090,
+            0.991444861373810,  0.130526192220051,
+            0.991444861373810, -0.130526192220051,
+            0.923879532511287, -0.382683432365090,
+            0.793353340291235, -0.608761429008721,
+            0.608761429008721, -0.793353340291235,
+            0.382683432365090, -0.923879532511287,
+            0.130526192220052, -0.991444861373810,
+           -0.130526192220052, -0.991444861373810,
+           -0.382683432365090, -0.923879532511287,
+           -0.608761429008721, -0.793353340291235,
+           -0.793353340291235, -0.608761429008721,
+           -0.923879532511287, -0.382683432365090,
+           -0.991444861373810, -0.130526192220052,
+           -0.991444861373810,  0.130526192220051,
+           -0.923879532511287,  0.382683432365090,
+           -0.793353340291235,  0.608761429008721,
+           -0.608761429008721,  0.793353340291235,
+           -0.382683432365090,  0.923879532511287,
+           -0.130526192220052,  0.991444861373810
+    };
+```
+
+### 3. we evaluate all 4 points:
+
+in SuperSimplex (OpenSimplex2s), we evaluate all 4 points:
+```
+    // We evaluate **4 points** (SuperSimplex)
+    value += vertex(xsb, ysb, dx0, dy0);
+    value += vertex(xsb + 1, ysb, dx0 - 1 + R2_INV, dy0 + R2_INV);
+    value += vertex(xsb, ysb + 1, dx0 + R2_INV, dy0 - 1 + R2_INV);
+    value += vertex(xsb + 1, ysb + 1, dx0 - 1 + 2*R2_INV, dy0 - 1 + 2*R2_INV);
 ```
 
 so finally the code becomes:
@@ -229,18 +262,6 @@ For each octave:
 - Increase frequency: the features get smaller (finer details) → controlled by lacunarity.
 - Decrease amplitude: the new layer contributes less to overall height → controlled by persistence.
 
-so basically:
-```
-noiseHeight = 0;
-for (int o = 0; o < octaves; o++) {
-    sampleX = x / scale * frequency;
-    sampleY = y / scale * frequency;
-    noiseHeight += noise.eval(sampleX, sampleY) * amplitude;
-
-    amplitude *= persistence;
-    frequency *= lacunarity;
-}
-```
 
 ### step 3: normalise
 After summing octaves, noiseHeight may go outside [0,1].
@@ -299,6 +320,17 @@ this can be done using the informations we got from TerrainAnalyser, and a proba
 ![alt text](image-5.png)
 
 check out: [NaturalResourceRandomizer.java](./src/main/java/terrain/NaturalResourceRandomizer.java)
+
+
+to visualise:
+- change in pom.xml to:
+```
+<mainClass>app.NoisePreview2D</mainClass> <!--main class to run-->
+```
+- then run:
+```
+mvn javafx:run "-Djavafx.platform=win"
+```
 
 
 # 2. Swarm:
