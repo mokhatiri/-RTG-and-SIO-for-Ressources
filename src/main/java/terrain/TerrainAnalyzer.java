@@ -32,7 +32,6 @@ public class TerrainAnalyzer {
                 slope[x][y] = Math.sqrt(dx * dx + dy * dy);
             }
         }
-
         return slope;
     }
 
@@ -42,7 +41,6 @@ public class TerrainAnalyzer {
     public double[][] computeFlatness() {
         double[][] slope = computeSlope();
         double[][] flatness = new double[width][height];
-
         double maxSlope = 0;
         // find max slope to normalize
         for (int x = 0; x < width; x++)
