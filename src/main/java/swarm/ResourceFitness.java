@@ -78,8 +78,6 @@ public class ResourceFitness implements FitnessFunction {
             score += fishSchoolValue;
 
         // modify score based on flatness
-        score *= (1 + flatness[x][y]);
-
         return score * (1 - (1  - flatness[x][y]) * flatness_coeff);
     }
 }
