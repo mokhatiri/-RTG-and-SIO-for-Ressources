@@ -47,7 +47,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>app.NoisePreview2D</mainClass> <!--main class to run-->
+                    <mainClass>app.Launcher</mainClass> <!--main class to run-->
                     <systemPropertyVariables>
                         <javafx.platform>${javafx.platform}</javafx.platform>
                     </systemPropertyVariables>

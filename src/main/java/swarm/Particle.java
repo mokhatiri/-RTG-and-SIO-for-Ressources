@@ -1,26 +1,63 @@
 package swarm;
 
-import java.util.Random;
-
 public class Particle {
+    private double[] position; // Current position of the particle
+    private double[] velocity; // Current velocity of the particle
+    private double[] personalBestPosition; // Best position found by this particle
+    private double personalBestFitness; // Fitness value of the personal best position
 
-    public double x, y; // current position
-    public double vx, vy; // velocity
+    public Particle(int dimensions, double maxPosition, double minPosition) {
+        position = new double[dimensions];
+        velocity = new double[dimensions];
+        personalBestPosition = new double[dimensions];
+        personalBestFitness = Double.NEGATIVE_INFINITY;
 
-    public double bestX, bestY; // personal best
-    public double bestScore; // personal best score
+        // Initialize position and velocity randomly
+        for (int i = 0; i < dimensions; i++) {
+            position[i] = minPosition + (maxPosition - minPosition) * Math.random();
+            velocity[i] = -1.0 + 2.0 * Math.random(); // Random velocity between -1 and 1
+            personalBestPosition[i] = position[i]; // Initial personal best is current position
+        }
+    }
 
-    private final Random rand = new Random();
+    // Getters and Setters
+    public double[] getPosition() {
+        return position;
+    }
 
-    public Particle(int width, int height) {
-        this.x = rand.nextDouble() * width;
-        this.y = rand.nextDouble() * height;
+    public void setPosition(double[] position) {
+        this.position = position;
+    }
 
-        this.vx = 0;
-        this.vy = 0;
-        
-        this.bestX = x;
-        this.bestY = y;
-        this.bestScore = Double.NEGATIVE_INFINITY;
+    public double[] getVelocity() {
+        return velocity;
+    }
+
+    public void setVelocity(double[] velocity) {
+        this.velocity = velocity;
+    }
+
+    public double[] getPersonalBestPosition() {
+        return personalBestPosition;
+    }
+
+    public void setPersonalBestPosition(double[] personalBestPosition) {
+        this.personalBestPosition = personalBestPosition;
+    }
+
+    public double getPersonalBestFitness() {
+        return personalBestFitness;
+    }
+
+    public void setPersonalBestFitness(double personalBestFitness) {
+        this.personalBestFitness = personalBestFitness;
+    }
+
+    // Update personal best
+    public void updatePersonalBest(double currentFitness) {
+        if (currentFitness > personalBestFitness) { // For maximization problems
+            personalBestFitness = currentFitness;
+            System.arraycopy(position, 0, personalBestPosition, 0, position.length);
+        }
     }
 }

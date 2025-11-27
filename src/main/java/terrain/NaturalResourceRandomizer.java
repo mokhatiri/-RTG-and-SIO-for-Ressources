@@ -14,7 +14,7 @@ public class NaturalResourceRandomizer {
         this.rand = new Random(seed);
     }
 
-    public boolean[][] randomizeResourceWeighted(int[][] terrainMap, double[][] flatnessMap, String resourceType, double baseProbability) {
+    public boolean[][] randomizeResourceWeighted(int[][] terrainMap, double[][] flatnessMap, String resourceType, double resourceSpecificProbability) {
         boolean[][] resourceMap = new boolean[width][height];
 
         for (int x = 0; x < width; x++) {
@@ -37,7 +37,7 @@ public class NaturalResourceRandomizer {
                 }
 
                 // Combine with randomness
-                double chance = baseProbability * suitability;
+                double chance = resourceSpecificProbability * suitability;
                 if (rand.nextDouble() < chance) {
                     resourceMap[x][y] = true;
                 }

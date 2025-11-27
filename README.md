@@ -335,3 +335,7 @@ mvn javafx:run "-Djavafx.platform=win"
 
 # 2. Swarm:
 
+## What is PSO:
+
+PSO: particle swarm optimisation, is a computational methode that optimizes a problem by iteratively trying to improve a candidate solution with regard to a given measure of quality. (FitnessFunction)
+
