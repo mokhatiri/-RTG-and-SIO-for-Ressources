@@ -335,7 +335,190 @@ mvn javafx:run "-Djavafx.platform=win"
 
 # 2. Swarm:
 
+<<<<<<< HEAD
 ## What is PSO:
 
 PSO: particle swarm optimisation, is a computational methode that optimizes a problem by iteratively trying to improve a candidate solution with regard to a given measure of quality. (FitnessFunction)
 
+=======
+## Overview:
+
+Swarm Intelligence Optimization (SIO) is used to optimally place natural resources on the generated terrain. Instead of purely random placement, we use Particle Swarm Optimization (PSO) to find locations that maximize a fitness score based on terrain characteristics and resource preferences.
+
+## Particle Swarm Optimization (PSO):
+
+PSO is a metaheuristic optimization algorithm inspired by the social behavior of bird flocking or fish schooling. A swarm of particles explores the search space (in our case, the 2D terrain map) to find optimal solutions.
+
+### Core Concepts:
+
+#### 1. Particles:
+
+Each particle represents a potential resource placement location on the map:
+- **Position**: `(x, y)` coordinates on the terrain
+- **Velocity**: `(vx, vy)` direction and speed of movement
+- **Personal Best**: Stores the best position this particle has found (`bestX`, `bestY`, `bestScore`)
+
+#### 2. Global Best:
+
+The swarm keeps track of the globally best solution found by any particle in the entire swarm.
+
+#### 3. Update Rule:
+
+At each iteration, particles update their velocity and position using:
+
+```
+vx_new = w * vx + c1 * r1 * (bestX - x) + c2 * r2 * (globalBestX - x)
+vy_new = w * vy + c1 * r1 * (bestY - y) + c2 * r2 * (globalBestY - y)
+
+x_new = x + vx_new
+y_new = y + vy_new
+```
+
+Where:
+- `w`: inertia weight (controls momentum)
+- `c1`, `c2`: cognitive and social coefficients (control attraction to personal and global bests)
+- `r1`, `r2`: random values in [0, 1]
+
+This allows particles to:
+- **Exploit**: Move toward known good solutions (personal and global bests)
+- **Explore**: Maintain some randomness to escape local optima
+
+### Particle Implementation:
+
+```java
+public class Particle {
+    public double x, y;           // current position
+    public double vx, vy;         // velocity
+    public double bestX, bestY;   // personal best position
+    public double bestScore;      // personal best fitness score
+}
+```
+
+Particles are initialized with random positions uniformly distributed across the terrain dimensions.
+
+## Fitness Functions:
+
+The optimization uses composite fitness functions to evaluate location quality. Multiple `FitnessFunction` implementations evaluate different criteria:
+
+### 1. Terrain Fitness:
+
+Evaluates how suitable a location is based on terrain type:
+
+```java
+public class TerrainFitness implements FitnessFunction {
+    // Terrain types:
+    // 0 = water
+    // 1 = plains
+    // 2 = hills
+    // 3 = mountains
+    
+    public double evaluate(int x, int y) {
+        double score = switch(terrain[x][y]) {
+            case 0 -> water_value;
+            case 1 -> plains_value;
+            case 2 -> hills_value;
+            case 3 -> mountains_value;
+            default -> 0;
+        };
+        
+        // Adjust based on terrain flatness
+        return score * (1 - (1 - flatness[x][y]) * flatness_coeff);
+    }
+}
+```
+
+The terrain score is modulated by **flatness coefficient** (`flatness_coeff`), allowing steep or flat areas to be penalized/rewarded based on configuration.
+
+### 2. Resource Fitness:
+
+Evaluates how suitable a location is for specific resource placement based on:
+- **Resource presence**: Which resources are located at that position
+- **Flatness preference**: Each resource type has flatness preferences
+
+```java
+public class ResourceFitness implements FitnessFunction {
+    // Resource types (9 total):
+    // 0 = Sedimentary Rock
+    // 1 = Gemstones
+    // 2 = Iron Ore
+    // 3 = Coal
+    // 4 = Gold Ore
+    // 5 = Wood
+    // 6 = Cattle Herd
+    // 7 = Wolf Pack
+    // 8 = Fish School
+    
+    public double evaluate(int x, int y) {
+        double score = 0.0;
+        
+        // Sum values for all resources present at this location
+        if (resourceTerrain[x][y][SEDIMENTARY_ROCK] == 1)
+            score += sedimentaryRockValue;
+        if (resourceTerrain[x][y][GEMSTONES] == 1)
+            score += gemstonesValue;
+        // ... etc for all resources
+        
+        // Boost score based on flatness
+        score *= (1 + flatness[x][y]);
+        
+        // Apply flatness coefficient modulation
+        return score * (1 - (1 - flatness[x][y]) * flatness_coeff);
+    }
+}
+```
+
+Each resource type has an associated score value. Locations are evaluated by summing the values of all resources present, then modulating by terrain flatness.
+
+## Resource Placement Strategy:
+
+The swarm optimization approach works as follows:
+
+### 1. Candidate Solution Representation:
+
+A candidate solution is represented as:
+
+```java
+public class ResourcePlacementSolution {
+    public final int x;
+    public final int y;
+}
+```
+
+This simple 2D coordinate represents a potential location to place/evaluate a resource grouping.
+
+### 2. Multi-Objective Optimization:
+
+The fitness evaluation can combine multiple fitness functions:
+- **Terrain Fitness**: Ensures resources are placed on terrain types they prefer
+- **Resource Fitness**: Prioritizes locations rich in valuable resources
+
+The combined fitness allows the swarm to find locations that balance both terrain suitability and resource density.
+
+### 3. Adaptive Placement:
+
+By iterating the PSO algorithm, the swarm converges toward optimal placement zones where:
+- Terrain type matches resource preferences
+- Resource density is high
+- Terrain flatness supports the settlement/extraction
+
+This produces a more natural, efficient resource distribution compared to uniform random placement.
+
+## Advantages Over Random Placement:
+
+1. **Terrain-Aware**: Resources are placed on suitable terrain types
+2. **Clustered Distribution**: Related resources naturally group together
+3. **Optimized Accessibility**: Flatness and slope considerations improve extractability
+4. **Balanced Objectives**: Handles trade-offs between multiple optimization criteria
+5. **Convergence**: The swarm converges toward globally good solutions rather than purely random locations
+
+## Current Implementation Status:
+
+✓ Particle class with velocity and position tracking  
+✓ FitnessFunction interface for modular evaluation  
+✓ TerrainFitness for terrain-based scoring  
+✓ ResourceFitness for resource-based scoring with 9 resource types  
+✓ ResourcePlacementSolution for representing candidate placements  
+⏳ Full SwarmOptimizer implementation (in progress)  
+
+The framework is in place for comprehensive swarm-based resource optimization on procedurally generated terrain.
+>>>>>>> 454c16b903d3984b6dbc75a4cc6bb3c702486a3b
