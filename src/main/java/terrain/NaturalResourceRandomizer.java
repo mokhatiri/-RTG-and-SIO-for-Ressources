@@ -25,13 +25,8 @@ public class NaturalResourceRandomizer {
         this.rand = new Random(seed);
     }
 
-<<<<<<< HEAD
-    public boolean[][] randomizeResourceWeighted(int[][] terrainMap, double[][] flatnessMap, String resourceType, double resourceSpecificProbability) {
-        boolean[][] resourceMap = new boolean[width][height];
-=======
     public boolean[][][] randomizeResourceWeighted(int[][] terrainMap, double[][] flatnessMap, double[] baseProbabilities) {
         boolean[][][] resourceMap = new boolean[width][height][baseProbabilities.length];
->>>>>>> 454c16b903d3984b6dbc75a4cc6bb3c702486a3b
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -41,12 +36,6 @@ public class NaturalResourceRandomizer {
                 for (int i = 0; i < baseProbabilities.length; i++) {
                     double adjustedProbability = baseProbabilities[i];
 
-<<<<<<< HEAD
-                // Combine with randomness
-                double chance = resourceSpecificProbability * suitability;
-                if (rand.nextDouble() < chance) {
-                    resourceMap[x][y] = true;
-=======
                     switch (i) {
                         case SEDIMENTARY_ROCK: // prefers water and lowland plains
                             adjustedProbability *= (terrain == 0 || terrain == 1) ? 1.6 : 0.4;
@@ -90,7 +79,6 @@ public class NaturalResourceRandomizer {
                     adjustedProbability = Math.max(0.0, Math.min(1.0, adjustedProbability));
 
                     resourceMap[x][y][i] = rand.nextDouble() < adjustedProbability;
->>>>>>> 454c16b903d3984b6dbc75a4cc6bb3c702486a3b
                 }
             }
         }
