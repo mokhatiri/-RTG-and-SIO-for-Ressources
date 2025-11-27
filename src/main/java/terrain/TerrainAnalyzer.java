@@ -58,25 +58,84 @@ public class TerrainAnalyzer {
     }
 
     
-    // Categorize terrain into types (water, plains, hill, mountain)
-    // based on height thresholds.
-    public int[][] categorizeTerrain(double waterLevel, double hillLevel, double mountainLevel) {
+    // based on height thresholds with neighborhood voting smoothing.
+    // First performs height-based categorization, then applies voting to eliminate isolated cells.
+    public int[][] categorizeTerrain(double waterLevel, double hillLevel, double mountainLevel, double transition) {
         int[][] terrain = new int[width][height];
 
+        // Step 1: Initial height-based categorization
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 double h = heightMap[x][y];
                 if (h < waterLevel)
-                    terrain[x][y] = 0; // water
-                else if (h < hillLevel)
-                    terrain[x][y] = 1; // plains
-                else if (h < mountainLevel)
-                    terrain[x][y] = 2; // hill
+                    terrain[x][y] = 0;
+                else if (waterLevel <= h && h < waterLevel + transition)
+                    terrain[x][y] = 2;
+                else if (waterLevel + transition <= h && h < hillLevel)
+                    terrain[x][y] = 3;
+                else if (hillLevel <= h && h < hillLevel + transition)
+                    terrain[x][y] = 4;
+                else if (hillLevel + transition <= h && h < mountainLevel)
+                    terrain[x][y] = 5;
+                else if (mountainLevel <= h && h < mountainLevel + transition)
+                    terrain[x][y] = 6;
                 else
-                    terrain[x][y] = 3; // mountain
+                    terrain[x][y] = 7;
             }
         }
 
+        /*
+        0 : WATER
+        2 : SHORELINE
+        3 : PLAINS
+        4 : FOOTHILLS
+        5 : HILLS
+        6 : MOUNTAIN_BASE
+        7 : MOUNTAINS
+        */
+
+        // Step 2: Apply neighborhood voting to smooth and eliminate isolated cells
+        terrain = applyNeighborhoodVoting(terrain, 3); // 3x3 neighborhood
+
         return terrain;
+    }
+
+    // Each cell is reassigned to the most common terrain type in its neighborhood
+    private int[][] applyNeighborhoodVoting(int[][] terrain, int radius) {
+        int[][] smoothedTerrain = new int[width][height];
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                // Count votes from neighbors
+                int[] votes = new int[8]; // 0-7 terrain types
+
+                for (int dx = -radius / 2; dx <= radius / 2; dx++) {
+                    for (int dy = -radius / 2; dy <= radius / 2; dy++) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        // Check bounds
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            votes[terrain[nx][ny]]++;
+                        }
+                    }
+                }
+
+                // Find the terrain type with the most votes
+                int maxVotes = 0;
+                int mostCommonTerrain = terrain[x][y]; // default to current
+
+                for (int terrainType = 0; terrainType < votes.length; terrainType++) {
+                    if (votes[terrainType] > maxVotes) {
+                        maxVotes = votes[terrainType];
+                        mostCommonTerrain = terrainType;
+                    }
+                }
+
+                smoothedTerrain[x][y] = mostCommonTerrain;
+            }
+        }
+
+        return smoothedTerrain;
     }
 }

@@ -2,13 +2,17 @@ package terrain;
 
 import java.util.Random;
 
+import terrain.RessourceRandomizer.ResourceThresholdModulator;
+
+// Generates natural resource distributions using noise-based vein clustering
+// Combines multi-scale noise patterns with terrain preferences for realistic resource placement
 public class NaturalResourceRandomizer {
 
-    private final int width;
-    private final int height;
-    private final Random rand;
+    private static final int NUM_RESOURCES = 9;
 
-    // Resource type indices
+    private final Random rand;
+    private final double[][][] veinMaps;
+
     public static final int SEDIMENTARY_ROCK = 0;
     public static final int GEMSTONES = 1;
     public static final int IRON_ORE = 2;
@@ -19,70 +23,62 @@ public class NaturalResourceRandomizer {
     public static final int WOLF_PACK = 7;
     public static final int FISH_SCHOOL = 8;
 
-    public NaturalResourceRandomizer(int width, int height, long seed) {
-        this.width = width;
-        this.height = height;
+    public NaturalResourceRandomizer(long seed, int mapWidth, int mapHeight, double scale, double offsetX, double offsetY) {
         this.rand = new Random(seed);
+        this.veinMaps = new double[NUM_RESOURCES][][];
+
+        // Initialize vein maps for each resource type
+        initializeVeinMaps(mapWidth, mapHeight, seed, scale, offsetX, offsetY);
+    }
+
+    // Generate coarse noise maps for efficient vein-based distribution
+    private void initializeVeinMaps(int width, int height, long baseSeed, double scale, double offsetX, double offsetY) {
+        for (int resourceType = 0; resourceType < NUM_RESOURCES; resourceType++) {
+            // Unique seed for each resource type to ensure different vein patterns
+            long resourceSeed = baseSeed + resourceType * 12345L;
+            NoiseMapGenerator noiseGenerator = new NoiseMapGenerator(resourceSeed);
+            veinMaps[resourceType] = noiseGenerator.generateWithOffset(width, height, scale*10, 1, 0, 0, 1, offsetX, offsetY);
+    }
     }
 
     public boolean[][][] randomizeResourceWeighted(int[][] terrainMap, double[][] flatnessMap, double[] baseProbabilities) {
-        boolean[][][] resourceMap = new boolean[width][height][baseProbabilities.length];
+        boolean[][][] resourceMap = new boolean[terrainMap.length][terrainMap[0].length][baseProbabilities.length];
 
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
+        for (int x = 0; x < resourceMap.length; x++) {
+            for (int y = 0; y < resourceMap[0].length; y++) {
                 int terrain = terrainMap[x][y];
-                double flat = flatnessMap[x][y];
+                double flatness = flatnessMap[x][y];
 
-                for (int i = 0; i < baseProbabilities.length; i++) {
-                    double adjustedProbability = baseProbabilities[i];
+                for (int resourceType = 0; resourceType < baseProbabilities.length; resourceType++) {
+                    boolean shouldSpawn = evaluateResourcePlacementStacked(
+                            resourceType, veinMaps[resourceType][x][y], terrain, flatness, baseProbabilities[resourceType]
+                    );
 
-                    switch (i) {
-                        case SEDIMENTARY_ROCK: // prefers water and lowland plains
-                            adjustedProbability *= (terrain == 0 || terrain == 1) ? 1.6 : 0.4;
-                            break;
-                        case GEMSTONES: // prefers mountains and rocky, low-flatness areas
-                            adjustedProbability *= (terrain == 2) ? 2.0 : 0.3;
-                            adjustedProbability *= (flat < 0.4) ? 1.25 : 0.9;
-                            break;
-                        case IRON_ORE: // prefers hills and mountains
-                            adjustedProbability *= (terrain == 1 || terrain == 2) ? 1.7 : 0.35;
-                            break;
-                        case COAL: // prefers hills and older sediment areas
-                            adjustedProbability *= (terrain == 1) ? 1.5 : (terrain == 2 ? 1.1 : 0.2);
-                            break;
-                        case GOLD_ORE: // rare, concentrated in rugged mountains
-                            adjustedProbability *= (terrain == 2 && flat < 0.25) ? 2.5 : 0.05;
-                            break;
-                        case WOOD: // prefers forested plains and gentle hills (higher flatness)
-                            adjustedProbability *= (terrain == 0) ? 0.3 : (terrain == 1 ? 1.6 : 0.6);
-                            adjustedProbability *= (flat > 0.5) ? 1.3 : 0.9;
-                            break;
-                        case CATTLE_HERD: // domesticated herds prefer open flat plains and pasture (high flatness)
-                            adjustedProbability *= (terrain == 0 || terrain == 1) ? 1.6 : 0.25;
-                            adjustedProbability *= (flat > 0.6) ? 1.4 : 0.8;
-                            break;
-                        case WOLF_PACK: // prefers mixed terrain near forests and hills
-                            adjustedProbability *= (terrain == 1 || terrain == 2) ? 1.3 : 0.4;
-                            break;
-                        case FISH_SCHOOL: // only in water
-                            adjustedProbability *= (terrain == 0) ? 2.0 : 0.0;
-                            break;
-                        default:
-                            // leave base probability
-                            break;
-                    }
-
-                    // clamp probability
-                    if (Double.isNaN(adjustedProbability) || Double.isInfinite(adjustedProbability)) {
-                        adjustedProbability = 0;
-                    }
-                    adjustedProbability = Math.max(0.0, Math.min(1.0, adjustedProbability));
-
-                    resourceMap[x][y][i] = rand.nextDouble() < adjustedProbability;
+                    resourceMap[x][y][resourceType] = shouldSpawn;
                 }
             }
         }
 
         return resourceMap;
+    }
+
+    private boolean evaluateResourcePlacementStacked(int resourceType, double noiseValue, int terrain, 
+                                                      double flatness, double baseProbability) {
+
+        if (baseProbability <= 0.0) {
+            return false;
+        }
+
+        if (resourceType < 0 || resourceType >= veinMaps.length) {
+            return rand.nextDouble() < baseProbability; // Fallback to pure probability if invalid resource type
+        }
+
+        double terrainFavoritism = ResourceThresholdModulator.modulateThreshold(resourceType, terrain, flatness, 1 - baseProbability);
+        
+        if (noiseValue < terrainFavoritism) {
+            return false;
+        }
+
+        return true;
     }
 }
