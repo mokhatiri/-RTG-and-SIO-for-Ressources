@@ -1,9 +1,12 @@
 package swarm;
 
+import nd.DoubleNDArray;
+import nd.IntNDArray;
+
 public class ResourceFitness implements FitnessFunction {
 
-    private final double[][] flatness;
-    private final int[][][] resourceTerrain;
+    private final DoubleNDArray flatness;
+    private final IntNDArray resourceTerrain; // last axis: resource index
     private final double flatness_coeff;
 
     double sedimentaryRockValue;
@@ -40,8 +43,8 @@ public class ResourceFitness implements FitnessFunction {
                            double cattleHerdValue,
                            double wolfPackValue,
                            double fishSchoolValue) {
-        this.flatness = flatness;
-        this.resourceTerrain = resourceTerrain;
+        this.flatness = DoubleNDArray.from2D(flatness);
+        this.resourceTerrain = IntNDArray.from3D(resourceTerrain);
         this.sedimentaryRockValue = sedimentaryRockValue;
         this.gemstonesValue = gemstonesValue;
         this.ironOreValue = ironOreValue;
@@ -55,29 +58,32 @@ public class ResourceFitness implements FitnessFunction {
     }
 
     @Override
-    public double evaluate(int x, int y) {
+    public double evaluate(int[] pos) {
         double score = 0.0;
 
-        if (resourceTerrain[x][y][SEDIMENTARY_ROCK] == 1)
-            score += sedimentaryRockValue;
-        if (resourceTerrain[x][y][GEMSTONES] == 1)
-            score += gemstonesValue;
-        if (resourceTerrain[x][y][IRON_ORE] == 1)
-            score += ironOreValue;
-        if (resourceTerrain[x][y][COAL] == 1)
-            score += coalValue;
-        if (resourceTerrain[x][y][GOLD_ORE] == 1)
-            score += goldOreValue;
-        if (resourceTerrain[x][y][WOOD] == 1)
-            score += woodValue;
-        if (resourceTerrain[x][y][CATTLE_HERD] == 1)
-            score += cattleHerdValue;
-        if (resourceTerrain[x][y][WOLF_PACK] == 1)
-            score += wolfPackValue;
-        if (resourceTerrain[x][y][FISH_SCHOOL] == 1)
-            score += fishSchoolValue;
+        // Build a coordinate array including resource axis
+        int[] base = pos.clone();
+        // for each resource type, probe resourceTerrain at base coords + resource index
+        for (int r = 0; r < 9; r++) {
+            int[] idx = new int[base.length + 1];
+            System.arraycopy(base, 0, idx, 0, base.length);
+            idx[base.length] = r;
+            if (resourceTerrain.get(idx) == 1) {
+                switch (r) {
+                    case SEDIMENTARY_ROCK -> score += sedimentaryRockValue;
+                    case GEMSTONES -> score += gemstonesValue;
+                    case IRON_ORE -> score += ironOreValue;
+                    case COAL -> score += coalValue;
+                    case GOLD_ORE -> score += goldOreValue;
+                    case WOOD -> score += woodValue;
+                    case CATTLE_HERD -> score += cattleHerdValue;
+                    case WOLF_PACK -> score += wolfPackValue;
+                    case FISH_SCHOOL -> score += fishSchoolValue;
+                }
+            }
+        }
 
         // modify score based on flatness
-        return score * (1 - (1  - flatness[x][y]) * flatness_coeff);
+        return score * (1 - (1 - flatness.get(pos)) * flatness_coeff);
     }
 }

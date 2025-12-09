@@ -1,9 +1,12 @@
 package swarm;
 
+import nd.DoubleNDArray;
+import nd.IntNDArray;
+
 public class TerrainFitness implements FitnessFunction {
 
-    private final int[][] terrain;
-    private final double[][] flatness;
+    private final IntNDArray terrain;
+    private final DoubleNDArray flatness;
     private final double water_value;
     private final double plains_value;
     private final double hills_value;
@@ -17,8 +20,8 @@ public class TerrainFitness implements FitnessFunction {
                           double plains_value,
                           double hills_value,
                           double mountains_value) {
-        this.terrain = terrain;
-        this.flatness = flatness;
+        this.terrain = IntNDArray.from2D(terrain);
+        this.flatness = DoubleNDArray.from2D(flatness);
         this.water_value = water_value;
         this.plains_value = plains_value;
         this.hills_value = hills_value;
@@ -27,18 +30,16 @@ public class TerrainFitness implements FitnessFunction {
     }
 
     @Override
-    public double evaluate(int x, int y) {
-        int t = terrain[x][y];
-
-        double score = switch (t) {
-            case 0 -> water_value;  // water
-            case 1 -> plains_value;  // plains
-            case 2 -> hills_value;  // hills
-            case 3 -> mountains_value;  // mountains
-            default -> 0;
-        };
-
-        // combine with flatness
-        return score * (1 - (1  - flatness[x][y]) * flatness_coeff);
+    public double evaluate(int[] pos) {
+        int t = terrain.get(pos);
+        double score;
+        switch (t) {
+            case 0: score = water_value; break;
+            case 1: score = plains_value; break;
+            case 2: score = hills_value; break;
+            case 3: score = mountains_value; break;
+            default: score = 0; break;
+        }
+        return score * (1 - (1 - flatness.get(pos)) * flatness_coeff);
     }
 }

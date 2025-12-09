@@ -35,9 +35,10 @@ public class ResourceThresholdModulator {
         public final double unfavorablePenalty;
         public final double flatnessPreference; 
         public final double flatnessInfluence;
+        public final int[] bannedRegions;
 
         public ResourcePreferences(int fav1, int fav2, double favBonus,
-                                   int unfav, double unfavPenalty, double flatPref, double flatInfluence) {
+                                   int unfav, double unfavPenalty, double flatPref, double flatInfluence, int... bannedRegions) {
             this.favorableTerrain1 = fav1;
             this.favorableTerrain2 = fav2;
             this.favorableTerrainBonus = favBonus;
@@ -45,13 +46,14 @@ public class ResourceThresholdModulator {
             this.unfavorablePenalty = unfavPenalty;
             this.flatnessPreference = flatPref;
             this.flatnessInfluence = flatInfluence;
+            this.bannedRegions = bannedRegions;
         }
     }
 
     // Define preferences for each resource type
     private static final ResourcePreferences[] preferences =  {
         // SEDIMENTARY_ROCK: hugs coasts and flood plains, avoids high peaks
-        new ResourcePreferences(2, 3, 0.05, 7, 0.18, 0.75, 0.25),
+        new ResourcePreferences(2, 3, 0.05, 7, 0.18, 0.75, 0.25, 7),
 
         // GEMSTONES: embedded in rugged alpine biomes with steep slopes
         new ResourcePreferences(6, 7, 0.04, 2, 0.24, 0.25, 0.35),
@@ -66,16 +68,16 @@ public class ResourceThresholdModulator {
         new ResourcePreferences(6, 7, 0.06, 3, 0.28, 0.30, 0.30),
 
         // WOOD: thrives in broadleaf plains spilling into foothills
-        new ResourcePreferences(3, 4, 0.04, 7, 0.22, 0.80, 0.18),
+        new ResourcePreferences(3, 4, 0.04, 7, 0.22, 0.80, 0.18, 0, 1),
 
         // CATTLE_HERD: needs expansive flatlands and meadow edges
-        new ResourcePreferences(3, 4, 0.05, 5, 0.25, 0.90, 0.40),
+        new ResourcePreferences(3, 4, 0.05, 5, 0.25, 0.90, 0.40, 0),
 
         // WOLF_PACK: roams forest fringes between plains and foothills
-        new ResourcePreferences(4, 5, 0.03, 0, 0.20, 0.50, 0.15),
+        new ResourcePreferences(4, 5, 0.03, 0, 0.20, 0.50, 0.15, 0),
 
         // FISH_SCHOOL: confined to deep and shallow waters, penalized elsewhere
-        new ResourcePreferences(0, 2, 0.08, 3, 0.30, 0.95, 0.10)
+        new ResourcePreferences(0, 2, 0.08, 3, 0.30, 0.95, 0.10, 2, 3, 4, 5, 6, 7)
     };
 
     public static double modulateThreshold(int resourceType, int terrain, double flatness, double threshold) {
@@ -91,6 +93,14 @@ public class ResourceThresholdModulator {
         } else if (terrain == pref.unfavorableTerrain) {
             threshold += pref.unfavorablePenalty;
         }
+
+        // check if banned region
+        for ( int terrainBanned : pref.bannedRegions) {
+            if (terrain == terrainBanned){
+                return 1;
+            }
+        }
+
 
         // Adjust based on flatness preference
         double flatnessDifference = Math.abs(flatness - pref.flatnessPreference);

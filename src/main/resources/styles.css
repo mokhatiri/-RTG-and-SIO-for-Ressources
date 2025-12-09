@@ -1,0 +1,35 @@
+/* Application launcher styles */
+.root {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #2c3e50, #4ca1af);
+    -fx-font-family: "Segoe UI", Roboto, Arial;
+}
+
+.title-label {
+    -fx-text-fill: white;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.subtitle-label {
+    -fx-text-fill: rgba(255,255,255,0.85);
+    -fx-font-size: 12px;
+}
+
+.launcher-button {
+    -fx-background-color: #ffffffcc;
+    -fx-text-fill: #2c3e50;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 8 18 8 18;
+    -fx-border-width: 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 6, 0, 0, 2);
+}
+
+.launcher-button:hover {
+    -fx-background-color: #ffffff;
+}
+
+.footer-label {
+    -fx-text-fill: rgba(255,255,255,0.7);
+    -fx-font-size: 11px;
+}

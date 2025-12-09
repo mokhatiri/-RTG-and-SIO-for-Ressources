@@ -1,12 +1,10 @@
 package swarm;
 
+// Represents a potentially n-dimensional placement solution; now holds arbitrary coordinates
 public class ResourcePlacementSolution {
+    public final int[] coords;
 
-    public final int x;
-    public final int y;
-
-    public ResourcePlacementSolution(int x, int y) {
-        this.x = x;
-        this.y = y;
+    public ResourcePlacementSolution(int... coords) {
+        this.coords = coords;
     }
 }

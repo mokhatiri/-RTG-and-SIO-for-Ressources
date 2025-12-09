@@ -3,6 +3,15 @@ this is a Random terrain generation and swarm intelligence optimisation project 
 
 For now the implimentation is 2D;
 
+## Visualization (JavaFX)
+
+This project uses JavaFX to present interactive previews for terrain/noise generation and PSO visualization. The `app.Launcher` opens a simple interface to explore the 2D previews and tweak parameters in real time via the controls. Use the `NoisePreview2D` and `PSOPreview` views for quick visual exploration.
+
+Run the application (Windows example):
+```pwsh
+mvn javafx:run -Djavafx.platform=win
+```
+
 # People:
 @mokhatiri
 @lamseey
@@ -10,7 +19,40 @@ For now the implimentation is 2D;
 # Project Steps:
 
 
-the project can be divided into multiple steps:
+
+## n-Dimensional (ND) generalization
+
+To make the core components more flexible and future-proof, the project includes lightweight n-dimensional array wrappers and ND-capable variations of key algorithms. The 2D view and behaviour are kept backward-compatible.
+
+- New utility types:
+    - `DoubleNDArray` and `IntNDArray` — flat-backed ND containers with `from2D(...)`, `from3D(...)` factories and general `get`/`set`.
+    - `PositionMapper` — converts continuous PSO positions into discrete ND coordinates.
+
+- ND-enabled algorithmic changes:
+    - `TerrainAnalyzer(DoubleNDArray)` supports `computeSlopeND()` and `categorizeTerrainND(...)` with neighborhood voting.
+    - `NaturalResourceRandomizer` now exposes `randomizeResourceWeightedND(IntNDArray terrain, DoubleNDArray flatness, double[] baseProbabilities)` that returns an `IntNDArray` whose last axis contains resource presence flags.
+    - Fitness functions (`ResourceFitness`, `TerrainFitness`) implement `evaluate(int[] coords)` to operate on ND coordinates.
+    - `ResourcePlacementSolution` now stores `int[] coords` for ND placement.
+
+Snippet examples:
+
+```java
+// build an ND heightmap from a 2D array
+DoubleNDArray heightND = DoubleNDArray.from2D(heightMap);
+TerrainAnalyzer analyzerND = new TerrainAnalyzer(heightND);
+DoubleNDArray slopeND = analyzerND.computeSlopeND();
+IntNDArray terrainND = analyzerND.categorizeTerrainND(waterLevel, hillLevel, mountainLevel, transition);
+
+// generate ND resource placement
+NaturalResourceRandomizer rr = new NaturalResourceRandomizer(seed, width, height, scale, offsetX, offsetY);
+IntNDArray resourceND = rr.randomizeResourceWeightedND(terrainND, slopeND, params.getProbabilitiesArray());
+
+// use swarm optimizer with ND-aware discrete fitness via an adapter
+int[] gridShape = new int[]{width, height};
+ResourceFitness rFitness = new ResourceFitness(flatness2D, flatnessCoeff, resourceTerrain3D, /*values...*/);
+TerrainFitness tFitness = new TerrainFitness(flatness2D, flatnessCoeff, terrain2D, /*values...*/);
+SwarmOptimizer optimizer = new SwarmOptimizer(dimensions, w, c1, c2, resourceCoeff, terrainCoeff, rFitness, tFitness, gridShape);
+```
 
 ---
 # 1. Terrain:
@@ -641,14 +683,3 @@ This produces a more natural, efficient resource distribution compared to unifor
 3. **Optimized Accessibility**: Flatness and slope considerations improve extractability
 4. **Balanced Objectives**: Handles trade-offs between multiple optimization criteria
 5. **Convergence**: The swarm converges toward globally good solutions rather than purely random locations
-
-## Current Implementation Status:
-
-✓ Particle class with velocity and position tracking  
-✓ FitnessFunction interface for modular evaluation  
-✓ TerrainFitness for terrain-based scoring  
-✓ ResourceFitness for resource-based scoring with 9 resource types  
-✓ ResourcePlacementSolution for representing candidate placements  
-⏳ Full SwarmOptimizer implementation (in progress)  
-
-The framework is in place for comprehensive swarm-based resource optimization on procedurally generated terrain.

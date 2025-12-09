@@ -6,7 +6,7 @@ public class NoiseMapGenerator {
         this.noise = new Noise(seed);
     }
 
-    private double layeredNoise(double x, double y, int width, int height, double scale, int octaves, double persistence, double lacunarity, double flattenPower) {
+    private double layeredNoise(double x, double y, double width, double height, double scale, int octaves, double persistence, double lacunarity, double flattenPower) {
         if (scale <= 0) scale = 0.0001;
 
         double nx = x / (double) width * scale;
@@ -30,18 +30,18 @@ public class NoiseMapGenerator {
         return Math.min(1.0, Math.max(0.0, normalized));
     }
 
-    public double[][] generate(int width, int height, double scale, int octaves, double persistence, double lacunarity, double flattenPower) {
-        double[][] map = new double[width][height];
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++)
+    public double[][] generate(double width, double height, double scale, int octaves, double persistence, double lacunarity, double flattenPower) {
+        double[][] map = new double[(int) width][(int) height];
+        for (int x = 0; x < (int) width; x++)
+            for (int y = 0; y < (int) height; y++)
                 map[x][y] = layeredNoise(x, y, width, height, scale, octaves, persistence, lacunarity, flattenPower);
         return map;
     }
 
-    public double[][] generateWithOffset(int width, int height, double scale, int octaves, double persistence, double lacunarity, double flattenPower, double offsetX, double offsetY) {
-        double[][] map = new double[width][height];
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++)
+    public double[][] generateWithOffset(double width, double height, double scale, int octaves, double persistence, double lacunarity, double flattenPower, double offsetX, double offsetY) {
+        double[][] map = new double[(int) width][(int) height];
+        for (int x = 0; x < (int) width; x++)
+            for (int y = 0; y < (int) height; y++)
                 map[x][y] = layeredNoise(x + offsetX, y + offsetY, width, height, scale, octaves, persistence, lacunarity, flattenPower);
         return map;
     }
