@@ -40,8 +40,6 @@ public class NoisePreview2DControls {
     private TitledPane buildNoiseGenerationPane() {
         VBox noiseControlsVBox = new VBox(5);
 
-        addTerrainSlider(noiseControlsVBox, "Scale.", 0, 10, terrainParams.scale, 0.1,
-                newVal -> {terrainParams.scale = newVal; resourceParams.scale = newVal;});
         addIntSlider(noiseControlsVBox, "Octaves.", 1, 30, terrainParams.octaves, 1,
                 newVal -> terrainParams.octaves = newVal);
         addTerrainSlider(noiseControlsVBox, "Persistence.", 0.1, 1.0, terrainParams.persistence, 0.05,

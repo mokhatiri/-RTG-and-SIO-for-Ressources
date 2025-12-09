@@ -7,8 +7,10 @@ import app.noisePreview.TerrainGenerationParams;
 import app.noisePreview.TerrainRenderer;
 
 import javafx.scene.Scene;
+
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -19,6 +21,8 @@ public class NoisePreview2D {
 
     private static final int DISPLAY_SIZE = 512;
     private static final int CELL_SIZE = DISPLAY_SIZE / 128;
+    private static final double MAX_SCALE = 10.0;
+    private static final double MIN_SCALE = 0.1;
 
     private double offsetX = 0;
     private double offsetY = 0;
@@ -69,6 +73,16 @@ public class NoisePreview2D {
             lastMouseX = e.getX();
             lastMouseY = e.getY();
             updateDisplay();
+        });
+
+        canvas.setOnScroll(e -> {
+            double scrollDelta = e.getDeltaY();
+            double scaleChange = scrollDelta > 0 ? 1.1 : 0.909; // Zoom in or out
+            if( (scaleChange > 1 && terrainParams.scale * scaleChange > MAX_SCALE) || (scaleChange < 1 && terrainParams.scale * scaleChange < MIN_SCALE)) return; // Prevent too much zoom out
+            terrainParams.scale *= scaleChange;
+            resourceParams.scale *= scaleChange;
+            updateDisplay();
+            e.consume();
         });
     }
 

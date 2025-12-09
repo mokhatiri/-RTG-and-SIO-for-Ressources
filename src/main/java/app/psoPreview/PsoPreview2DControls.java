@@ -45,7 +45,7 @@ public class PsoPreview2DControls {
 
         ScrollPane scrollPane = new ScrollPane(psoParamsBox);
         scrollPane.setFitToWidth(true);
-        scrollPane.setPrefHeight(300);
+        scrollPane.setPrefHeight(400);
 
         return new TitledPane("PSO Parameters", scrollPane);
     }
