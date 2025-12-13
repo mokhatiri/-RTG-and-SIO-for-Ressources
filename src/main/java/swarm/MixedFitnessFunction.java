@@ -15,6 +15,10 @@ public class MixedFitnessFunction implements FitnessFunction {
 
     @Override
     public double evaluate(int[] x) {
-        return (resourceCoeff * resourceFitnessFunction.evaluate(x) + terrainCoeff * terrainFitnessFunction.evaluate(x)) / (resourceCoeff + terrainCoeff);
+        double denom = (resourceCoeff + terrainCoeff);
+        if (denom == 0.0) {
+            return 0.0;
+        }
+        return (resourceCoeff * resourceFitnessFunction.evaluate(x) + terrainCoeff * terrainFitnessFunction.evaluate(x)) / denom;
     }
 }

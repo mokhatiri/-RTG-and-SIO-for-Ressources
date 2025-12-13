@@ -33,3 +33,33 @@
     -fx-text-fill: rgba(255,255,255,0.7);
     -fx-font-size: 11px;
 }
+
+/* Project details window */
+.details-card {
+    -fx-background-color: rgba(255,255,255,0.12);
+    -fx-background-radius: 10px;
+}
+
+.details-section-title {
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.details-paragraph {
+    -fx-text-fill: rgba(255,255,255,0.88);
+    -fx-font-size: 12.5px;
+}
+
+.details-bullet {
+    -fx-text-fill: rgba(255,255,255,0.86);
+    -fx-font-size: 12.5px;
+}
+
+.details-scroll {
+    -fx-background-color: transparent;
+}
+
+.details-scroll .viewport {
+    -fx-background-color: transparent;
+}

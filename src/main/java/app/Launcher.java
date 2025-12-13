@@ -55,6 +55,12 @@ public class Launcher extends Application {
             psoStage.show();
         });
 
+        Button detailsButton = new Button("Project details");
+        detailsButton.getStyleClass().add("launcher-button");
+        detailsButton.setPrefSize(220, 44);
+        detailsButton.setGraphic(new Label("ℹ"));
+        detailsButton.setOnAction(e -> ProjectDetailsView.show());
+
         // subtle hover effects
         noisePreviewButton.setOnMouseEntered(e -> { noisePreviewButton.setScaleX(1.03); noisePreviewButton.setScaleY(1.03);} );
         noisePreviewButton.setOnMouseExited(e -> { noisePreviewButton.setScaleX(1.0); noisePreviewButton.setScaleY(1.0);} );
@@ -64,6 +70,9 @@ public class Launcher extends Application {
         // Buttons container with spacing
         HBox buttonRow = new HBox(14, noisePreviewButton, psoPreviewButton);
         buttonRow.setAlignment(Pos.CENTER);
+
+        HBox infoRow = new HBox(14, detailsButton);
+        infoRow.setAlignment(Pos.CENTER);
 
         VBox root = new VBox(14); // Increased spacing
         root.setAlignment(Pos.CENTER);
@@ -78,9 +87,9 @@ public class Launcher extends Application {
         HBox footer = new HBox(8);
         footer.setAlignment(Pos.CENTER_RIGHT);
         footer.getChildren().addAll(footerLabel, exitButton);
-        root.getChildren().addAll(titleLabel, subtitle, new Separator(), buttonRow, footer);
+        root.getChildren().addAll(titleLabel, subtitle, new Separator(), buttonRow, infoRow, footer);
 
-        Scene scene = new Scene(root, 560, 320); // Larger, more modern size
+        Scene scene = new Scene(root, 560, 370); // Slightly taller for the extra button
         // apply application stylesheet
         try {
             scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());

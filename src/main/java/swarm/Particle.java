@@ -8,6 +8,8 @@ public class Particle {
     private double[] personalBestPosition; // Best position found by this particle
     private double personalBestFitness; // Fitness value of the personal best position
     private Function<double[], Double> evaluateFitness; // Fitness evaluation function
+    private final double minPosition;
+    private final double maxPosition;
 
     public Particle(int dimensions, double maxPosition, double minPosition, Function<double[], Double> evaluateFitness) {
         this.dimensions = dimensions;
@@ -16,6 +18,8 @@ public class Particle {
         this.personalBestPosition = new double[dimensions];
         this.personalBestFitness = Double.NEGATIVE_INFINITY;
         this.evaluateFitness = evaluateFitness;
+        this.minPosition = minPosition;
+        this.maxPosition = maxPosition;
 
         // Initialize position and velocity randomly
         for (int i = 0; i < dimensions; i++) {
@@ -66,19 +70,40 @@ public class Particle {
         }
     }
 
-    public double update(double w, double c1, double c2, double globalBest){
+    public double update(double w, double c1, double c2, double[] globalBestPosition){
         for(int i = 0; i < dimensions; i++ ){
-            double r1 = Math.random(); // changes for each particle
-            double r2 = Math.random(); // changes for each particle
-            // Update velocity
+            double r1 = Math.random();
+            double r2 = Math.random();
+
+            double gb = (globalBestPosition != null && globalBestPosition.length > i)
+                    ? globalBestPosition[i]
+                    : position[i];
+
             velocity[i] = w * velocity[i]
                     + c1 * r1 * (personalBestPosition[i] - position[i])
-                    + c2 * r2 * (globalBest - position[i]);
-            // Update position
+                    + c2 * r2 * (gb - position[i]);
             position[i] += velocity[i];
+
+            // Keep particles inside bounds: reflect velocity when hitting edges.
+            if (position[i] < minPosition) {
+                position[i] = minPosition;
+                velocity[i] = -velocity[i];
+            } else if (position[i] > maxPosition) {
+                position[i] = maxPosition;
+                velocity[i] = -velocity[i];
+            }
         }
 
         updatePersonalBest(this.evaluateFitness.apply(position));
         return personalBestFitness;
+    }
+
+    // Backward compatible overload (treat scalar as "same best" for all axes)
+    public double update(double w, double c1, double c2, double globalBest){
+        double[] gb = new double[dimensions];
+        for (int i = 0; i < dimensions; i++) {
+            gb[i] = globalBest;
+        }
+        return update(w, c1, c2, gb);
     }
 }
