@@ -8,8 +8,6 @@ import javafx.scene.paint.Color;
 public class TerrainRenderer {
     private static final int WIDTH = 128;
     private static final int HEIGHT = 128;
-    private static final int DISPLAY_SIZE = 512;
-    private static final int CELL_SIZE = DISPLAY_SIZE / WIDTH;
 
     private final GraphicsContext noiseGC;
     private final GraphicsContext terrainGC;
@@ -21,23 +19,34 @@ public class TerrainRenderer {
 
     public void renderAll(double[][] heightMap, int[][] terrainTypes, 
                          boolean[][][] resourceMaps, ResourceGenerationParams resourceParams) {
-        renderNoise(heightMap);
+        if (noiseGC != null) {
+            renderNoise(heightMap);
+        }
         renderTerrain(terrainTypes);
         renderResources(resourceMaps, resourceParams);
     }
 
     private void renderNoise(double[][] heightMap) {
+        clear(noiseGC);
+        CellLayout layout = computeLayout(noiseGC);
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
                 int gray = (int) (heightMap[x][y] * 255);
                 gray = Math.max(0, Math.min(255, gray));
                 noiseGC.setFill(Color.rgb(gray, gray, gray));
-                noiseGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                noiseGC.fillRect(
+                        layout.originX + x * layout.cellSize,
+                        layout.originY + y * layout.cellSize,
+                        layout.cellSize,
+                        layout.cellSize
+                );
             }
         }
     }
 
     private void renderTerrain(int[][] terrainTypes) {
+        clear(terrainGC);
+        CellLayout layout = computeLayout(terrainGC);
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
                 Color terrainColor;
@@ -61,51 +70,90 @@ public class TerrainRenderer {
                     default -> terrainColor = Color.BLACK;
                 }
                 terrainGC.setFill(terrainColor);
-                terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                terrainGC.fillRect(
+                        layout.originX + x * layout.cellSize,
+                        layout.originY + y * layout.cellSize,
+                        layout.cellSize,
+                        layout.cellSize
+                );
             }
         }
     }
 
     private void renderResources(boolean[][][] resourceMaps, ResourceGenerationParams resourceParams) {
+        CellLayout layout = computeLayout(terrainGC);
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
                 if (resourceParams.showSedimentary && resourceMaps[x][y][NaturalResourceRandomizer.SEDIMENTARY_ROCK]) {
                     terrainGC.setFill(resourceParams.sedimentaryColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
                 if (resourceParams.showGemstones && resourceMaps[x][y][NaturalResourceRandomizer.GEMSTONES]) {
                     terrainGC.setFill(resourceParams.gemstonesColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
                 if (resourceParams.showIronOre && resourceMaps[x][y][NaturalResourceRandomizer.IRON_ORE]) {
                     terrainGC.setFill(resourceParams.ironOreColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
                 if (resourceParams.showCoal && resourceMaps[x][y][NaturalResourceRandomizer.COAL]) {
                     terrainGC.setFill(resourceParams.coalColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
                 if (resourceParams.showGoldOre && resourceMaps[x][y][NaturalResourceRandomizer.GOLD_ORE]) {
                     terrainGC.setFill(resourceParams.goldOreColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
                 if (resourceParams.showWood && resourceMaps[x][y][NaturalResourceRandomizer.WOOD]) {
                     terrainGC.setFill(resourceParams.woodColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
                 if (resourceParams.showCattleHerd && resourceMaps[x][y][NaturalResourceRandomizer.CATTLE_HERD]) {
                     terrainGC.setFill(resourceParams.cattleHerdColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
                 if (resourceParams.showWolfPack && resourceMaps[x][y][NaturalResourceRandomizer.WOLF_PACK]) {
                     terrainGC.setFill(resourceParams.wolfPackColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
                 if (resourceParams.showFishSchool && resourceMaps[x][y][NaturalResourceRandomizer.FISH_SCHOOL]) {
                     terrainGC.setFill(resourceParams.fishSchoolColor);
-                    terrainGC.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    terrainGC.fillRect(layout.originX + x * layout.cellSize, layout.originY + y * layout.cellSize, layout.cellSize, layout.cellSize);
                 }
             }
+        }
+    }
+
+    private void clear(GraphicsContext gc) {
+        if (gc == null || gc.getCanvas() == null) {
+            return;
+        }
+        gc.clearRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
+    }
+
+    private CellLayout computeLayout(GraphicsContext gc) {
+        double w = (gc == null || gc.getCanvas() == null) ? 0 : gc.getCanvas().getWidth();
+        double h = (gc == null || gc.getCanvas() == null) ? 0 : gc.getCanvas().getHeight();
+        if (w <= 0 || h <= 0) {
+            return new CellLayout(0, 0, 0);
+        }
+        double cellSize = Math.min(w / WIDTH, h / HEIGHT);
+        double drawW = cellSize * WIDTH;
+        double drawH = cellSize * HEIGHT;
+        double originX = (w - drawW) / 2.0;
+        double originY = (h - drawH) / 2.0;
+        return new CellLayout(originX, originY, cellSize);
+    }
+
+    private static final class CellLayout {
+        private final double originX;
+        private final double originY;
+        private final double cellSize;
+
+        private CellLayout(double originX, double originY, double cellSize) {
+            this.originX = originX;
+            this.originY = originY;
+            this.cellSize = cellSize;
         }
     }
 }

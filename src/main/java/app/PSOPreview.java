@@ -5,6 +5,7 @@ import app.noisePreview.NoisePreview2DControls;
 import app.noisePreview.ResourceGenerationParams;
 import app.noisePreview.TerrainGenerationParams;
 import app.noisePreview.TerrainRenderer;
+import app.preview.CanvasUtils;
 import app.preview.Viewport2D;
 import app.psoPreview.PsoParameters;
 import app.psoPreview.PsoPreview2DControls;
@@ -24,11 +25,14 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.stage.Stage;
+import javafx.stage.Screen;
+import javafx.geometry.Rectangle2D;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.scene.input.KeyEvent;
@@ -52,9 +56,7 @@ import java.util.List;
 
 public class PSOPreview {
 
-    private static final int DISPLAY_SIZE = 512;
     private static final int GRID_SIZE = 128;
-    private static final int CELL_SIZE = DISPLAY_SIZE / GRID_SIZE;
     private static final double MAX_SCALE = 10.0;
     private static final double MIN_SCALE = 0.1;
 
@@ -71,8 +73,6 @@ public class PSOPreview {
     private Timeline timeline;
     private boolean running;
 
-    private Canvas noiseCanvas;
-    private GraphicsContext noiseGC;
     private Canvas terrainCanvas;
     private GraphicsContext terrainGC;
 
@@ -116,32 +116,32 @@ public class PSOPreview {
         root.setLeft(terrainControls);
         root.setRight(psoControls);
 
-        noiseCanvas = new Canvas(DISPLAY_SIZE, DISPLAY_SIZE);
-        terrainCanvas = new Canvas(DISPLAY_SIZE, DISPLAY_SIZE);
+    terrainCanvas = new Canvas(1, 1);
+    terrainGC = terrainCanvas.getGraphicsContext2D();
 
-        noiseGC = noiseCanvas.getGraphicsContext2D();
-        terrainGC = terrainCanvas.getGraphicsContext2D();
+    // PSO preview: only show the visualization map (terrain + resources + overlay). No noise canvas here.
+    terrainRenderer = new TerrainRenderer(null, terrainGC);
 
-        terrainRenderer = new TerrainRenderer(noiseGC, terrainGC);
+    overlayRenderer = new PsoOverlayRenderer(GRID_SIZE, GRID_SIZE);
+    viewport = new Viewport2D(GRID_SIZE, GRID_SIZE, MIN_SCALE, MAX_SCALE, terrainParams, resourceParams);
 
-        overlayRenderer = new PsoOverlayRenderer(CELL_SIZE);
-        viewport = new Viewport2D(CELL_SIZE, MIN_SCALE, MAX_SCALE, terrainParams, resourceParams);
+    StackPane mapPane = new StackPane(terrainCanvas);
+    mapPane.setMinSize(0, 0);
+    mapPane.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+    CanvasUtils.bindCanvasToSquare(terrainCanvas, mapPane);
+    CanvasUtils.redrawOnResize(terrainCanvas, this::regenerateAndReset);
 
-        viewport.attach(noiseCanvas, this::regenerateAndReset);
-        viewport.attach(terrainCanvas, this::regenerateAndReset);
-
-        HBox canvasContainer = new HBox(10, noiseCanvas, terrainCanvas);
+    viewport.attach(terrainCanvas, this::regenerateAndReset);
 
         HBox hud = buildHud();
         root.setTop(hud);
-        root.setCenter(canvasContainer);
+        root.setCenter(mapPane);
         root.setBottom(buildBottomBar());
 
-        Scene scene = new Scene(
-            root,
-            DISPLAY_SIZE * 2 + 10 + terrainControls.getPrefWidth() + psoControls.getPrefWidth(),
-            DISPLAY_SIZE + 120
-        );
+        Rectangle2D bounds = Screen.getPrimary().getVisualBounds();
+        double initialW = Math.min(bounds.getWidth() * 0.95, 1600);
+        double initialH = Math.min(bounds.getHeight() * 0.90, 1000);
+        Scene scene = new Scene(root, initialW, initialH);
 
         // When the user navigates away (stage switches to another scene), stop background work.
         // When navigating away (scene replaced), this root gets detached => stop background work.
@@ -222,6 +222,11 @@ public class PSOPreview {
             toggleButton.setText("Hide progress");
             // Refresh after the stage is visible so we don't block the click handler/UI.
             Platform.runLater(() -> {
+                // Force an immediate charts refresh even if we previously enabled downsampling.
+                // This matters when the progress window is opened before the simulation starts
+                // (no further ticks => no future updateCharts calls).
+                tickCounter = 0;
+                chartSampleStride = 1;
                 lastChartsUpdateNs = 0L;
                 updateCharts();
             });
@@ -558,6 +563,7 @@ public class PSOPreview {
 
     private void resetCharts() {
         tickCounter = 0;
+        chartSampleStride = 1;
         lastChartsUpdateNs = 0L;
         if (avgSeries != null) avgSeries.getData().clear();
         if (diversitySeries != null) diversitySeries.getData().clear();

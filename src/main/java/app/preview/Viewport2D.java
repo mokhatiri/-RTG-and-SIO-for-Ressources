@@ -9,7 +9,8 @@ import javafx.scene.canvas.Canvas;
  * Offsets are tracked in grid-cell units (not pixels).
  */
 public class Viewport2D {
-    private final int cellSize;
+    private final int gridWidth;
+    private final int gridHeight;
     private final double minScale;
     private final double maxScale;
 
@@ -23,13 +24,15 @@ public class Viewport2D {
     private double lastMouseY;
 
     public Viewport2D(
-            int cellSize,
+            int gridWidth,
+            int gridHeight,
             double minScale,
             double maxScale,
             TerrainGenerationParams terrainParams,
             ResourceGenerationParams resourceParams
     ) {
-        this.cellSize = cellSize;
+        this.gridWidth = Math.max(1, gridWidth);
+        this.gridHeight = Math.max(1, gridHeight);
         this.minScale = minScale;
         this.maxScale = maxScale;
         this.terrainParams = terrainParams;
@@ -56,8 +59,12 @@ public class Viewport2D {
         });
 
         canvas.setOnMouseDragged(e -> {
-            offsetX -= (e.getX() - lastMouseX) / cellSize;
-            offsetY -= (e.getY() - lastMouseY) / cellSize;
+            double cellSizePx = getCellSizePx(canvas);
+            if (cellSizePx <= 0) {
+                return;
+            }
+            offsetX -= (e.getX() - lastMouseX) / cellSizePx;
+            offsetY -= (e.getY() - lastMouseY) / cellSizePx;
             lastMouseX = e.getX();
             lastMouseY = e.getY();
             onViewportChanged.run();
@@ -74,5 +81,17 @@ public class Viewport2D {
             onViewportChanged.run();
             e.consume();
         });
+    }
+
+    private double getCellSizePx(Canvas canvas) {
+        if (canvas == null) {
+            return 0;
+        }
+        double w = canvas.getWidth();
+        double h = canvas.getHeight();
+        if (w <= 0 || h <= 0) {
+            return 0;
+        }
+        return Math.min(w / gridWidth, h / gridHeight);
     }
 }
