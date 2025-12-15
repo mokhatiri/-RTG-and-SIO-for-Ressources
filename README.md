@@ -60,11 +60,7 @@ This project demonstrates terrain/noise generation and Particle Swarm Optimizati
 - @mokhatiri
 - @lamseey
 
-## License
-
-- (No license specified in the report. Add a `LICENSE` file or update README to include the preferred license.)
-
 ## Notes
 
 - The current visualization and controls target a 2D preview. Core data structures and algorithms include n-dimensional support for possible future expansion.
-- See `Report.md` for a more detailed technical explanation and diagrams.
+- See `Report.pdf` for a more detailed technical explanation and diagrams.
